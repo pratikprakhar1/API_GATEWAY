@@ -3,7 +3,12 @@ const morgan = require('morgan');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
+
 const { PORT } = require('./config/serverConfig');
+const { FLIGHT_SERVICE_PATH } = require('./config/serverConfig');
+const { FLIGHT_AUTH_PATH } = require('./config/serverConfig');
+const { BOOKING_SERVICE_PATH } = require('./config/serverConfig');
+
 const app = express();
 
 const limiter = rateLimit({
@@ -13,10 +18,11 @@ const limiter = rateLimit({
 
 app.use(morgan('combined'));
 app.use(limiter);
+const getFlightAuthURL = `${FLIGHT_AUTH_PATH}/api/v1/isauthenticated`
 app.use('/bookingservice', async (req, res, next) => {
     console.log(req.headers['x-access-token']);
     try {
-        const response = await axios.get('http://localhost:3001/api/v1/isauthenticated', {
+        const response = await axios.get(getFlightAuthURL , {
             headers: {
                 'x-access-token': req.headers['x-access-token']
             }
@@ -35,8 +41,8 @@ app.use('/bookingservice', async (req, res, next) => {
         })
     }
 })
-app.use('/flightservice', createProxyMiddleware({ target: 'http://localhost:3000/', changeOrigin: true}));
-app.use('/bookingservice', createProxyMiddleware({ target: 'http://localhost:3002/', changeOrigin: true}));
+app.use('/flightservice', createProxyMiddleware({ target: `${FLIGHT_SERVICE_PATH}/`, changeOrigin: true}));
+app.use('/bookingservice', createProxyMiddleware({ target: `${BOOKING_SERVICE_PATH}/`, changeOrigin: true}));
 app.get('/home', (req, res) => {
     return res.json({message: 'OK'});
 })
